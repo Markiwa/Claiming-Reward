@@ -93,7 +93,6 @@ async function getDeviceModel(): Promise<string> {
 async function getAndroidDeviceInfo(): Promise<string> {
   try {
     const userAgent = navigator.userAgent;
-    const buildMatch = userAgent.match(/Build\/([^)]+)/);
 
     if (/Samsung/i.test(userAgent)) {
       if (/SM-A/i.test(userAgent)) return 'Samsung Galaxy A Series';

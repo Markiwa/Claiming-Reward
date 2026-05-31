@@ -20,11 +20,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   useEffect(() => {
     loadVisitors();
-    if (autoRefresh) {
-      const interval = setInterval(loadVisitors, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh]);
+    const interval = setInterval(loadVisitors, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function loadVisitors() {
     try {

